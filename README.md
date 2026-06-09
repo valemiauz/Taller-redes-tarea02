@@ -1,6 +1,6 @@
 # Taller de Redes - Tarea 02
 > Resolución de la Tarea 02 para el Taller de Redes.
-> Demostración en video [_aquí_](https://drive.google.com/file/d/1aetIOuwnfRZ2zABWUQRfC8VXzE2_egc6/view?usp=sharing).
+> Demostración en video [_aquí_](https://drive.google.com/file/d/1aetlOuwnfRZ2zABWUQRfC8VXzE2_egc6/view?usp=sharing).
 
 ## Tabla de Contenidos
 * [Resumen](#resumen)
