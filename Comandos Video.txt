@@ -1,0 +1,19 @@
+
+// Contenedor  para Capturar Trafico de comunicacion del cliente y Servidor
+
+docker run --rm -it --network container:psql_server -v .:/data nicolaka/netshoot tcpdump -i any port 5432 -w /data/captura_postgres.pcap
+
+// Comando para entrar a la Bash del servidor cliente y luego establecer la conexion con el servidor 
+
+Comando 1--> docker exec -it psql_client sh (Acceder a la terminal del cliente)
+
+Comando 2--> psql -h postgres_server -U sebastian -d taller_redes (Conectarse al servidor de base de datos)
+
+
+// Consultas de prueba para mandarlas al servidor
+
+CREATE TABLE tareas (id SERIAL PRIMARY KEY, nombre_ramo VARCHAR(50));
+INSERT INTO tareas (nombre_ramo) VALUES ('Taller de Redes');
+SELECT * FROM tareas;
+\q          (cerrar la conexion con el servidor)
+exit        (salir de la terminal del contendor cliente)

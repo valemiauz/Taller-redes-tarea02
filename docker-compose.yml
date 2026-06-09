@@ -1,0 +1,30 @@
+services:
+  # --- Contenedor del Servidor ---
+  postgres_server:
+    image: postgres:15-alpine
+    container_name: psql_server
+    environment:
+      POSTGRES_USER: sebastian
+      POSTGRES_PASSWORD: 123
+      POSTGRES_DB: taller_redes
+    ports:
+      - "5432:5432"
+    networks:
+      - red_taller
+
+  # --- Contenedor del Cliente ---
+  postgres_client:
+    image: postgres:15-alpine
+    container_name: psql_client
+    entrypoint: /bin/sh
+    stdin_open: true
+    tty: true
+    networks:
+      - red_taller
+    depends_on:
+      - postgres_server
+
+      
+networks:
+  red_taller:
+    driver: bridge
