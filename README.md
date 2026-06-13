@@ -12,10 +12,6 @@
 3. [Archivos del Proyecto](#3-archivos-del-proyecto)
 4. [Arquitectura de Red (Modo Bridge)](#4-arquitectura-de-red-modo-bridge)
 5. [Instalación y Uso (Paso a Paso)](#5-instalación-y-uso-paso-a-paso)
-6. [Manual de Referencia: Comandos e Instrucciones](#6-manual-de-referencia-comandos-e-instrucciones)
-7. [Explicación Teórica de las Directivas de Docker](#7-explicación-teórica-de-las-directivas-de-docker)
-8. [Análisis del Protocolo (Significado de las Letras)](#8-análisis-del-protocolo-significado-de-las-letras)
-9. [Estado del Proyecto](#9-estado-del-proyecto)
 
 ---
 
@@ -95,7 +91,7 @@ docker exec -it psql_client sh
 psql -h postgres_server -U sebastian -d taller_redes
 ```
 
-> Cuando se soliciten las credenciales, ingresa la contraseña: `mi_password123`
+> Cuando se soliciten las credenciales, ingresa la contraseña: `123`
 
 ---
 
