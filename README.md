@@ -1,29 +1,144 @@
-# Taller de Redes - Tarea 02
-> Resolución de la Tarea 02 para el Taller de Redes.
-> Demostración en video [_aquí_](https://drive.google.com/file/d/1aetlOuwnfRZ2zABWUQRfC8VXzE2_egc6/view?usp=sharing).
+# Taller de Redes y Servicios — Tarea 02
+
+> Resolución completa de la Tarea 02 para el Taller de Redes y Servicios (Semestre 2026-1).  
+> 🎥 Demostración práctica en video: [Ver en Google Drive](https://drive.google.com/file/d/1aetlOuwnfRZ2zABWUQRfC8VXzE2_egc6/view?usp=sharing)
+
+---
 
 ## Tabla de Contenidos
-* [Resumen](#resumen)
-* [Tecnologías Utilizadas](#tecnologías-utilizadas)
-* [Archivos del Proyecto](#archivos-del-proyecto)
-* [Instalación y Uso](#instalación-y-uso)
-* [Estado del Proyecto](#estado-del-proyecto)
 
-## Resumen
-Este repositorio contiene los archivos necesarios para desplegar un entorno de base de datos y analizar su tráfico de red. El objetivo de la tarea es levantar un servicio mediante contenedores, ejecutar comandos específicos y capturar los paquetes de red resultantes para evidenciar la comunicación.
+1. [Resumen](#1-resumen)
+2. [Tecnologías Utilizadas](#2-tecnologías-utilizadas)
+3. [Archivos del Proyecto](#3-archivos-del-proyecto)
+4. [Arquitectura de Red (Modo Bridge)](#4-arquitectura-de-red-modo-bridge)
+5. [Instalación y Uso (Paso a Paso)](#5-instalación-y-uso-paso-a-paso)
+6. [Manual de Referencia: Comandos e Instrucciones](#6-manual-de-referencia-comandos-e-instrucciones)
+7. [Explicación Teórica de las Directivas de Docker](#7-explicación-teórica-de-las-directivas-de-docker)
+8. [Análisis del Protocolo (Significado de las Letras)](#8-análisis-del-protocolo-significado-de-las-letras)
+9. [Estado del Proyecto](#9-estado-del-proyecto)
 
-## Tecnologías Utilizadas
-- Docker y Docker Compose
-- PostgreSQL
-- Wireshark (para análisis de tráfico)
+---
 
-## Archivos del Proyecto
-- `docker-compose.yml`: Archivo de configuración que contiene la infraestructura y los servicios a levantar en los contenedores.
-- `Comandos Video.txt`: Documento que detalla los comandos exactos ejecutados en la terminal durante la demostración práctica.
-- `captura_postgres.pcap`: Captura de tráfico de red generada durante la interacción con la base de datos, lista para ser inspeccionada.
+## 1. Resumen
 
-## Instalación y Uso
-Para iniciar el entorno localmente, es necesario contar con Docker. Debes posicionarte en la carpeta del proyecto y ejecutar:
+Este repositorio contiene la infraestructura, scripts y configuraciones necesarias para desplegar un entorno aislado de base de datos relacional y analizar de forma exhaustiva su tráfico en la capa de aplicación.
+
+El objetivo primordial de la tarea es estudiar la máquina de estados del protocolo **PostgreSQL Frontend/Backend (v3.0)**, identificando detalladamente:
+
+- Las fases de negociación de seguridad (SSL).
+- El intercambio de desafíos criptográficos síncronos bajo el mecanismo **SCRAM-SHA-256**.
+- La transmisión de transacciones lógicas en texto plano.
+
+---
+
+## 2. Tecnologías Utilizadas
+
+| Herramienta | Rol |
+|---|---|
+| **Docker y Docker Compose** | Contenerización, orquestación y aislamiento de los entornos de software |
+| **PostgreSQL v15 (Alpine)** | Motor de base de datos relacional (Servidor) y consola interactiva (Cliente) |
+| **Netshoot** (`nicolaka/netshoot`) | Contenedor de diagnóstico con `tcpdump` para captura de tramas crudas a nivel de red |
+| **Wireshark** | Analizador de protocolos para inspección, filtrado y desglose de los paquetes `.pcap` |
+
+---
+
+## 3. Archivos del Proyecto
+
+| Archivo | Descripción |
+|---|---|
+| `docker-compose.yml` | Orquestación de la infraestructura: servicios, IPs, volúmenes y contenedor de captura automatizada |
+| `Comandos Video.txt` | Secuencia exacta de comandos y sentencias SQL ejecutadas durante la demostración |
+| `captura_postgres.pcap` | Tráfico de red crudo generado durante la interacción cliente-servidor, listo para Wireshark |
+
+---
+
+## 4. Arquitectura de Red (Modo Bridge)
+
+El proyecto implementa una red virtual de tipo **Bridge** denominada `red_taller`. En Docker, este componente actúa como un switch de red virtual integrado. Al iniciar los servicios, los contenedores quedan enlazados a este segmento privado con las siguientes direcciones:
+
+| Contenedor | IP | Puerto |
+|---|---|---|
+| Servidor (`postgres_server`) | `172.18.0.2/16` | `5432` |
+| Cliente (`postgres_client`) | `172.18.0.3/16` | — |
+
+Esta topología garantiza el **aislamiento hermético** del tráfico transaccional frente al sistema operativo anfitrión y redes externas, permitiendo que la herramienta de captura intercepte paquetes de la interfaz virtual sin interferencia de ruido de red doméstico o de Internet.
+
+---
+
+## 5. Instalación y Uso (Paso a Paso)
+
+### Paso 1 — Levantar la Infraestructura
+
+Abre una terminal en la carpeta raíz del proyecto y ejecuta:
 
 ```bash
-docker-compose up -d
+docker compose up -d
+```
+
+> Docker descargará las imágenes e inicializará los tres contenedores en segundo plano. El contenedor espía (`psql_capture`) comenzará a grabar inmediatamente todo el tráfico del servidor.
+
+---
+
+### Paso 2 — Acceder a la Consola del Cliente
+
+```bash
+docker exec -it psql_client sh
+```
+
+> El prompt de tu terminal cambiará, indicando que estás operando dentro del contenedor Linux aislado.
+
+---
+
+### Paso 3 — Conectarse a la Base de Datos
+
+```bash
+psql -h postgres_server -U sebastian -d taller_redes
+```
+
+> Cuando se soliciten las credenciales, ingresa la contraseña: `mi_password123`
+
+---
+
+### Paso 4 — Generar el Tráfico Transaccional
+
+Ejecuta las siguientes sentencias SQL una por una dentro del prompt `taller_redes=#`:
+
+```sql
+-- 1. Crear la tabla (gatilla mensajes 'Q' y 'C')
+CREATE TABLE tareas (id SERIAL PRIMARY KEY, nombre_ramo VARCHAR(50));
+
+-- 2. Insertar un registro (gatilla flujo de escritura)
+INSERT INTO tareas (nombre_ramo) VALUES ('Taller de Redes');
+
+-- 3. Consultar los datos (gatilla mensajes 'T' y 'D' con payload en texto plano)
+SELECT * FROM tareas;
+
+-- 4. Cerrar la sesión limpiamente (gatilla el mensaje 'X' de término)
+\q
+```
+
+---
+
+### Paso 5 — Salir del Contenedor Cliente
+
+```bash
+exit
+```
+
+---
+
+### Paso 6 — Desmontar el Entorno y Consolidar la Captura
+
+```bash
+docker compose down
+```
+
+> Al finalizar el desmontaje, se generará automáticamente el archivo `captura_postgres.pcap` en la carpeta raíz del proyecto.
+
+---
+
+### Paso 7 — Inspección en Wireshark
+
+1. Abre **Wireshark**.
+2. Carga el archivo: `File → Open → captura_postgres.pcap`.
+3. Aplica el filtro de visualización `pgsql` en la barra de búsqueda y presiona Enter.
