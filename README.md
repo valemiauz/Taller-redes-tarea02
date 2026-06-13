@@ -71,11 +71,25 @@ Abre una terminal en la carpeta raíz del proyecto y ejecuta:
 docker compose up -d
 ```
 
-> Docker descargará las imágenes e inicializará los tres contenedores en segundo plano. El contenedor espía (`psql_capture`) comenzará a grabar inmediatamente todo el tráfico del servidor.
+> Docker descargará las imágenes e inicializará los contenedores en segundo plano.
 
 ---
 
-### Paso 2 — Acceder a la Consola del Cliente
+### Paso 2 — Iniciar el Contenedor de Captura
+
+En una **segunda terminal**, lanza el contenedor espía de Netshoot. Este se acoplará a la red del servidor y comenzará a registrar todo el tráfico del puerto 5432:
+
+```bash
+docker run --rm -it --network container:psql_server -v .:/data nicolaka/netshoot tcpdump -i any port 5432 -w /data/captura_postgres.pcap
+```
+
+> Mantén esta terminal abierta durante toda la sesión. La captura se detendrá al interrumpirla con `Ctrl+C`.
+
+---
+
+### Paso 3 — Acceder a la Consola del Cliente
+
+En una **tercera terminal**, ingresa de forma interactiva al contenedor cliente:
 
 ```bash
 docker exec -it psql_client sh
@@ -85,17 +99,17 @@ docker exec -it psql_client sh
 
 ---
 
-### Paso 3 — Conectarse a la Base de Datos
+### Paso 4 — Conectarse a la Base de Datos
 
 ```bash
 psql -h postgres_server -U sebastian -d taller_redes
 ```
 
-> Cuando se soliciten las credenciales, ingresa la contraseña: `123`
+> Cuando se soliciten las credenciales, ingresa la contraseña: `mi_password123`
 
 ---
 
-### Paso 4 — Generar el Tráfico Transaccional
+### Paso 5 — Generar el Tráfico Transaccional
 
 Ejecuta las siguientes sentencias SQL una por una dentro del prompt `taller_redes=#`:
 
@@ -115,7 +129,7 @@ SELECT * FROM tareas;
 
 ---
 
-### Paso 5 — Salir del Contenedor Cliente
+### Paso 6 — Salir del Contenedor Cliente
 
 ```bash
 exit
@@ -123,17 +137,19 @@ exit
 
 ---
 
-### Paso 6 — Desmontar el Entorno y Consolidar la Captura
+### Paso 7 — Detener la Captura y Desmontar el Entorno
+
+Vuelve a la terminal del contenedor de captura y detente con `Ctrl+C`. El archivo `captura_postgres.pcap` quedará guardado en la carpeta raíz del proyecto.
+
+Luego, desmonta los servicios:
 
 ```bash
 docker compose down
 ```
 
-> Al finalizar el desmontaje, se generará automáticamente el archivo `captura_postgres.pcap` en la carpeta raíz del proyecto.
-
 ---
 
-### Paso 7 — Inspección en Wireshark
+### Paso 8 — Inspección en Wireshark
 
 1. Abre **Wireshark**.
 2. Carga el archivo: `File → Open → captura_postgres.pcap`.
