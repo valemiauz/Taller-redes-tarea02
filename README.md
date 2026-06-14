@@ -17,14 +17,14 @@
 
 ## 1. Resumen
 
-Este repositorio contiene la infraestructura, scripts y configuraciones necesarias para desplegar un entorno aislado de base de datos relacional y analizar de forma exhaustiva su tráfico en la capa de aplicación. 
+Este repositorio contiene la infraestructura, scripts y configuraciones necesarias para desplegar un entorno aislado de base de datos relacional y analizar de forma exhaustiva su tráfico en la capa de aplicación.
 
 El objetivo primordial de la tarea es estudiar la máquina de estados del protocolo **PostgreSQL Frontend/Backend (v3.0)**, identificando detalladamente:
 - Las fases de negociación de seguridad (SSL).
 - El intercambio de desafíos criptográficos síncronos bajo el mecanismo **SCRAM-SHA-256**.
 - La transmisión de transacciones lógicas en texto plano.
 
-A diferencia del enfoque anterior, este entorno se construye de forma nativa utilizando **Dockerfiles** personalizados basados en Ubuntu 22.04, los cuales clonan el repositorio del código fuente y compilan el motor de base de datos directamente en el contenedor del servidor.
+Este entorno se construye de forma nativa utilizando **Dockerfiles** personalizados basados en Ubuntu 22.04, los cuales clonan el repositorio del código fuente y compilan el motor de base de datos directamente en el contenedor del servidor.
 
 ---
 
@@ -72,3 +72,108 @@ Abre una terminal en la carpeta raíz del proyecto (donde se encuentra tu archiv
 
 ```bash
 docker compose up -d --build
+```
+
+> **⏳ Nota:** Debido a que Docker compilará todo el código de PostgreSQL en C desde cero, el proceso de construcción de las imágenes puede tardar **varios minutos** en completarse. El contenedor espía iniciará en segundo plano de forma automática al terminar.
+
+Espera hasta que todos los servicios aparezcan en **color verde** antes de continuar.
+
+---
+
+### Paso 2 — Entrar al Contenedor Cliente
+
+Una vez que el stack esté levantado, ingresa de forma interactiva al shell del contenedor cliente:
+
+```bash
+docker exec -it psql_client sh
+```
+
+---
+
+### Paso 3 — Conectarse al Servidor Remoto
+
+Desde dentro del contenedor, inicia la herramienta `psql` apuntando al host del servidor y al superusuario `postgres` a través de la red:
+
+```bash
+psql -h postgres_server -U postgres
+```
+
+Cuando la terminal solicite la contraseña (`Password for user postgres:`), escribe:
+
+```
+123
+```
+
+Presiona **Enter** para confirmar.
+
+> **🔒 Nota:** En entornos Linux, la contraseña **no se muestra en pantalla** mientras escribes. Esto es comportamiento normal.
+
+---
+
+### Paso 4 — Ejecutar la Secuencia SQL Transaccional
+
+Una vez dentro del prompt activo `postgres=#`, ejecuta los siguientes comandos uno por uno para registrar el tráfico de red:
+
+**A. Crear la tabla relacional**
+Gatilla mensajes `Q` y `C` de definición de esquema.
+
+```sql
+CREATE TABLE tareas (id SERIAL PRIMARY KEY, nombre_ramo VARCHAR(50));
+```
+
+**B. Insertar un registro de datos**
+Gatilla el flujo de escritura hacia el servidor.
+
+```sql
+INSERT INTO tareas (nombre_ramo) VALUES ('Taller de Redes');
+```
+
+**C. Consultar y extraer datos**
+Gatilla los mensajes `T` (descripción de columnas) y `D` (filas de datos) en texto plano.
+
+```sql
+SELECT * FROM tareas;
+```
+
+**D. Cerrar la sesión de forma limpia**
+Gatilla el mensaje de terminación `X` del protocolo.
+
+```sql
+\q
+```
+
+---
+
+### Paso 5 — Salir del Contenedor Cliente
+
+Para cerrar el canal interactivo y regresar a tu sistema operativo anfitrión:
+
+```bash
+exit
+```
+
+---
+
+### Paso 6 — Desmontar los Servicios y Consolidar la Captura
+
+Para detener de forma segura el laboratorio y forzar que `tcpdump` guarde todos los búferes de red en disco sin corromper bytes, ejecuta:
+
+```bash
+docker compose down
+```
+
+Al completarse el desmontaje, se habrá generado automáticamente el archivo binario **`captura_postgres.pcap`** en el directorio raíz del proyecto.
+
+---
+
+### Paso 7 — Inspección y Análisis en Wireshark
+
+1. Abre la aplicación **Wireshark** en tu computadora.
+2. Carga el archivo recién generado: **File → Open → `captura_postgres.pcap`**.
+3. Aplica el filtro de visualización en la barra superior:
+
+```
+pgsql
+```
+
+4. Presiona **Enter** para filtrar y analizar la máquina de estados del protocolo PostgreSQL.
