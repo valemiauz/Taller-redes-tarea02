@@ -1,22 +1,21 @@
 services:
-  # --- Contenedor del Servidor ---
+  # --- 1. CONFIGURACIÓN DEL SERVIDOR DESDE DOCKERFILE ---
   postgres_server:
-    image: postgres:15-alpine
+    build:
+      context: ./server
+      dockerfile: Dockerfile
     container_name: psql_server
-    environment:
-      POSTGRES_USER: sebastian
-      POSTGRES_PASSWORD: 123
-      POSTGRES_DB: taller_redes
     ports:
       - "5432:5432"
     networks:
       - red_taller
 
-  # --- Contenedor del Cliente ---
+  # --- 2. CONFIGURACIÓN DEL CLIENTE DESDE DOCKERFILE ---
   postgres_client:
-    image: postgres:15-alpine
+    build:
+      context: ./client
+      dockerfile: Dockerfile
     container_name: psql_client
-    entrypoint: /bin/sh
     stdin_open: true
     tty: true
     networks:
@@ -24,7 +23,17 @@ services:
     depends_on:
       - postgres_server
 
-      
+  # --- 3. CONTENEDOR DE CAPTURA AUTOMÁTICA (PCAP) ---
+  captura_trafico:
+    image: nicolaka/netshoot
+    container_name: psql_capture
+    network_mode: "service:postgres_server"
+    volumes:
+      - ./:/data
+    command: tcpdump -i any port 5432 -w /data/captura_postgres.pcap
+    depends_on:
+      - postgres_server
+
 networks:
   red_taller:
     driver: bridge
