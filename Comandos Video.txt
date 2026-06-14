@@ -1,14 +1,12 @@
+// Comando para Crear contenedores y comenzar la compilacion de las imagenes utilizando los repositorios entregados
 
-// Contenedor  para Capturar Trafico de comunicacion del cliente y Servidor
-
-docker run --rm -it --network container:psql_server -v .:/data nicolaka/netshoot tcpdump -i any port 5432 -w /data/captura_postgres.pcap
+Comando 1--> docker compose up -d --build
 
 // Comando para entrar a la Bash del servidor cliente y luego establecer la conexion con el servidor 
 
-Comando 1--> docker exec -it psql_client sh (Acceder a la terminal del cliente)
+Comando 2--> docker exec -it psql_client sh (Acceder a la terminal del cliente)
 
-Comando 2--> psql -h postgres_server -U postgres (Conectarse al servidor de base de datos)
-
+Comando 3--> psql -h postgres_server -U postgres (Conectarse al servidor de base de datos)
 
 // Consultas de prueba para mandarlas al servidor
 
