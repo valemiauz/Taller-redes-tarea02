@@ -7,7 +7,7 @@ docker run --rm -it --network container:psql_server -v .:/data nicolaka/netshoot
 
 Comando 1--> docker exec -it psql_client sh (Acceder a la terminal del cliente)
 
-Comando 2--> psql -h postgres_server -U sebastian -d taller_redes (Conectarse al servidor de base de datos)
+Comando 2--> psql -h postgres_server -U postgres (Conectarse al servidor de base de datos)
 
 
 // Consultas de prueba para mandarlas al servidor
