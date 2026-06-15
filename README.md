@@ -1,6 +1,6 @@
 # Taller de Redes y Servicios — Tarea 02
 
-> Resolución completa de la Tarea 02 para el Taller de Redes y Servicios (Semestre 2026-1).  
+> Resolución completa de la Tarea 02 para el Taller de Redes y Servicios (Semestre 2026-1) By Sebastian Quintero y Valentina Martinez ; Protocolo = PLPGSQL.  
 > 🎥 Demostración práctica en video: [Ver en Google Drive](https://drive.google.com/file/d/1E7D9Mztg_WDtbUt6iYXz46ZSLjgJODKr/view?usp=sharing)
 
 ---
