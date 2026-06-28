@@ -1,9 +1,9 @@
 FROM ubuntu:22.04
 
-# Evitar preguntas interactivas durante la instalación de paquetes de Ubuntu
+# Evitar preguntas interactivas durante la instalacion de paquetes
 ENV DEBIAN_FRONTEND=noninteractive
 
-# 1. Instalar herramientas de compilación y dependencias obligatorias
+# 1. Herramientas de compilacion y dependencias obligatorias
 RUN apt-get update && apt-get install -y \
     build-essential \
     git \
@@ -20,37 +20,32 @@ RUN apt-get update && apt-get install -y \
 
 WORKDIR /app
 
-# 2. Descargar el código fuente desde tu repositorio de GitHub
-# !!! REEMPLAZA ESTE ENLACE POR LA URL REAL DE TU SERVIDOR !!!
+# 2. Codigo fuente oficial de PostgreSQL
 RUN git clone https://github.com/postgres/postgres.git
 
-# 3. Moverse a la carpeta interna donde está el código real de Postgres
+# 3. Compilar el motor desde el codigo fuente
 WORKDIR /app/postgres
-
-# 4. Configurar el entorno de instalación
 RUN ./configure --prefix=/usr/local/pgsql --without-icu
 RUN make && make install
 
-# 5. Crear el usuario del sistema 'postgres'
+# 4. Usuario del sistema 'postgres'
 RUN useradd -m postgres
 RUN mkdir -p /usr/local/pgsql/data && chown -R postgres:postgres /usr/local/pgsql/data
 
-# 6. Configurar las variables de entorno para el usuario postgres
+# 5. Entorno del usuario postgres
 USER postgres
 ENV PATH="/usr/local/pgsql/bin:$PATH"
 
-# =========================================================================
-# 7. CORRECCIÓN: Inicializar la base de datos asignando la contraseña 'mi_password123'
-# =========================================================================
+# 6. Inicializar el cluster con la contrasena '123'
 RUN echo "123" > /tmp/pg_password && \
     initdb -D /usr/local/pgsql/data --pwfile=/tmp/pg_password && \
     rm /tmp/pg_password
 
-# 8. Configurar los archivos de acceso para permitir conexiones desde la red Bridge de Docker
+# 7. Permitir conexiones desde la red bridge con autenticacion SCRAM-SHA-256
 RUN echo "host all all all scram-sha-256" >> /usr/local/pgsql/data/pg_hba.conf
 RUN echo "listen_addresses='*'" >> /usr/local/pgsql/data/postgresql.conf
 
 EXPOSE 5432
 
-# 9. Iniciar el demonio del servidor en primer plano
+# 8. Iniciar el demonio en primer plano
 CMD ["postgres", "-D", "/usr/local/pgsql/data"]

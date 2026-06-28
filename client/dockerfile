@@ -2,7 +2,7 @@ FROM ubuntu:22.04
 
 ENV DEBIAN_FRONTEND=noninteractive
 
-# 1. Instalar herramientas básicas y dependencias de red
+# 1. Herramientas basicas y el cliente psql
 RUN apt-get update && apt-get install -y \
     build-essential \
     git \
@@ -13,13 +13,8 @@ RUN apt-get update && apt-get install -y \
 
 WORKDIR /app
 
-# 2. Descargar el código fuente del cliente que te entregaron
-# REEMPLAZA el link de abajo por el enlace del repositorio del CLIENTE que te dieron
+# 2. Repositorio del cliente (referencia)
 RUN git clone https://github.com/dbcli/pgcli.git
 
-# Nota técnica: Si el repositorio del cliente incluye un binario propio que requiere 
-# ser compilado, descomenta las siguientes dos líneas borrando el '#' de abajo:
-# RUN ./configure && make && make install
-
-# 3. Configurar el contenedor para mantener la terminal abierta
+# 3. Mantener la terminal abierta
 CMD ["/bin/sh"]

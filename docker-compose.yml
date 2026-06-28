@@ -1,5 +1,5 @@
 services:
-  # --- 1. CONFIGURACIÓN DEL SERVIDOR DESDE DOCKERFILE ---
+  # --- 1. SERVIDOR PostgreSQL COMPILADO DESDE EL CODIGO FUENTE (igual que Tarea 2) ---
   postgres_server:
     build:
       context: ./server
@@ -10,7 +10,7 @@ services:
     networks:
       - red_taller
 
-  # --- 2. CONFIGURACIÓN DEL CLIENTE DESDE DOCKERFILE ---
+  # --- 2. CLIENTE psql (igual que Tarea 2) ---
   postgres_client:
     build:
       context: ./client
@@ -20,17 +20,55 @@ services:
     tty: true
     networks:
       - red_taller
+    volumes:
+      - ./metricas:/metricas
     depends_on:
       - postgres_server
 
-  # --- 3. CONTENEDOR DE CAPTURA AUTOMÁTICA (PCAP) ---
+  # --- 3. CAPTURA DE TRAFICO (.pcap) compartiendo la pila de red del servidor ---
   captura_trafico:
     image: nicolaka/netshoot
     container_name: psql_capture
     network_mode: "service:postgres_server"
     volumes:
-      - ./:/data
-    command: tcpdump -i any port 5432 -w /data/captura_postgres.pcap
+      - ./capturas:/data
+    command: tcpdump -i any port 5432 -w /data/captura_tarea3.pcap
+    depends_on:
+      - postgres_server
+
+  # --- 4. ATACANTE MITM EN TIEMPO REAL (Scapy + NetfilterQueue) ---
+  # Comparte la pila de red del servidor: ve TODO el trafico que entra/sale
+  # por el puerto 5432 y puede modificarlo antes de entregarlo a postgres.
+  # Aqui tambien se aplica 'tc netem' para el analisis de metricas.
+  scapy_mitm:
+    build:
+      context: ./scapy
+      dockerfile: Dockerfile
+    container_name: scapy_mitm
+    network_mode: "service:postgres_server"
+    cap_add:
+      - NET_ADMIN
+      - NET_RAW
+    volumes:
+      - ./scapy:/scapy
+    working_dir: /scapy
+    depends_on:
+      - postgres_server
+
+  # --- 5. ATACANTE DE INYECCION / FUZZING (Scapy) en la red bridge ---
+  scapy_attacker:
+    build:
+      context: ./scapy
+      dockerfile: Dockerfile
+    container_name: scapy_attacker
+    networks:
+      - red_taller
+    cap_add:
+      - NET_ADMIN
+      - NET_RAW
+    volumes:
+      - ./scapy:/scapy
+    working_dir: /scapy
     depends_on:
       - postgres_server
 
