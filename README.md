@@ -328,7 +328,7 @@ Resultados obtenidos en este equipo (corrida de referencia; la **cota de desempe
 
 → **Cota de desempeño ≈ 10 %** de pérdida; con ≥ 40 % la transferencia ya no completa (la conexión expira).
 
-Para aplicar/quitar las métricas manualmente (útil para el video):
+Para aplicar/quitar las métricas manualmente :
 
 ```bash
 docker exec scapy_mitm tc qdisc add dev eth0 root netem delay 200ms   # añade latencia
