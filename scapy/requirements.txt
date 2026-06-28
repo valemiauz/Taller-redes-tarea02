@@ -1,0 +1,5 @@
+# Dependencias de Python para los ataques con Scapy.
+# Se instalan dentro del contenedor (ver scapy/Dockerfile), pero se listan
+# aqui por si se desea ejecutar de forma local en una maquina Linux.
+scapy
+NetfilterQueue
