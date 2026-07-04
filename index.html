@@ -1,0 +1,779 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>PGSQL QUEST // Taller de Redes T2 &amp; T3</title>
+<style>
+  /* ===== FUENTES RETRO ===== */
+  @import url('https://fonts.googleapis.com/css2?family=Press+Start+2P&family=VT323&display=swap');
+
+  :root{
+    --neon-pink:#ff2e97;
+    --neon-cyan:#05f2f2;
+    --neon-green:#39ff14;
+    --neon-yellow:#fee440;
+    --neon-purple:#b537f2;
+    --bg-dark:#0b0221;
+    --bg-panel:#160a35;
+    --grid:#2a1160;
+  }
+
+  *{box-sizing:border-box;margin:0;padding:0;}
+
+  html{scroll-behavior:smooth;}
+
+  body{
+    font-family:'VT323', monospace;
+    background:var(--bg-dark);
+    color:#e8e8ff;
+    font-size:20px;
+    overflow-x:hidden;
+    position:relative;
+  }
+
+  /* ===== FONDO GRID SYNTHWAVE ===== */
+  body::before{
+    content:"";
+    position:fixed;
+    inset:0;
+    background-image:
+      linear-gradient(var(--grid) 1px, transparent 1px),
+      linear-gradient(90deg, var(--grid) 1px, transparent 1px);
+    background-size:40px 40px;
+    transform:perspective(300px) rotateX(60deg);
+    transform-origin:center bottom;
+    opacity:.25;
+    z-index:-2;
+    animation:gridmove 8s linear infinite;
+  }
+  @keyframes gridmove{from{background-position:0 0;}to{background-position:0 40px;}}
+
+  /* ===== SCANLINES CRT ===== */
+  body::after{
+    content:"";
+    position:fixed;
+    inset:0;
+    background:repeating-linear-gradient(
+      to bottom,
+      rgba(0,0,0,0) 0px,
+      rgba(0,0,0,0) 2px,
+      rgba(0,0,0,.18) 3px,
+      rgba(0,0,0,.18) 4px);
+    pointer-events:none;
+    z-index:9999;
+  }
+
+  h1,h2,h3,.pixel{font-family:'Press Start 2P', cursive;}
+
+  /* ===== HEADER / HERO ===== */
+  header{
+    text-align:center;
+    padding:60px 20px 40px;
+    position:relative;
+  }
+  .title{
+    font-size:clamp(18px,4.5vw,44px);
+    line-height:1.5;
+    color:var(--neon-yellow);
+    text-shadow:3px 3px 0 var(--neon-pink), 6px 6px 0 var(--neon-purple);
+    animation:flicker 3s infinite;
+  }
+  @keyframes flicker{0%,92%,100%{opacity:1;}93%{opacity:.6;}95%{opacity:.9;}}
+  .subtitle{
+    font-family:'Press Start 2P';
+    font-size:clamp(8px,1.6vw,13px);
+    color:var(--neon-cyan);
+    margin-top:20px;
+    text-shadow:0 0 8px var(--neon-cyan);
+  }
+  .blink{animation:blink 1s steps(2) infinite;}
+  @keyframes blink{0%{opacity:1;}50%{opacity:0;}}
+
+  .press-start{
+    margin-top:30px;
+    font-family:'Press Start 2P';
+    font-size:11px;
+    color:var(--neon-green);
+  }
+
+  .players{
+    margin-top:26px;
+    font-size:24px;
+    color:#fff;
+  }
+  .players b{color:var(--neon-pink);}
+
+  /* ===== NAV / MENU DE NIVELES ===== */
+  nav{
+    position:sticky;
+    top:0;
+    z-index:100;
+    background:rgba(11,2,33,.92);
+    border-top:3px solid var(--neon-pink);
+    border-bottom:3px solid var(--neon-cyan);
+    display:flex;
+    flex-wrap:wrap;
+    justify-content:center;
+    gap:6px;
+    padding:12px 8px;
+    backdrop-filter:blur(4px);
+  }
+  nav a{
+    font-family:'Press Start 2P';
+    font-size:9px;
+    color:var(--neon-cyan);
+    text-decoration:none;
+    padding:8px 10px;
+    border:2px solid transparent;
+    transition:all .15s;
+  }
+  nav a:hover{
+    color:var(--bg-dark);
+    background:var(--neon-cyan);
+    border-color:#fff;
+    box-shadow:0 0 12px var(--neon-cyan);
+  }
+
+  /* ===== SECCIONES ===== */
+  section{
+    max-width:1000px;
+    margin:50px auto;
+    padding:0 20px;
+  }
+  .level-tag{
+    font-family:'Press Start 2P';
+    font-size:10px;
+    color:var(--neon-green);
+    background:#001a00;
+    display:inline-block;
+    padding:6px 12px;
+    border:2px solid var(--neon-green);
+    margin-bottom:14px;
+    box-shadow:0 0 10px rgba(57,255,20,.4);
+  }
+  h2{
+    font-size:clamp(14px,3vw,24px);
+    color:var(--neon-pink);
+    text-shadow:2px 2px 0 var(--neon-purple);
+    margin-bottom:18px;
+    line-height:1.4;
+  }
+  h3{
+    font-size:13px;
+    color:var(--neon-yellow);
+    margin:22px 0 10px;
+  }
+  p{margin-bottom:14px;line-height:1.5;}
+  .lead{font-size:22px;}
+
+  /* ===== PANELES ===== */
+  .panel{
+    background:var(--bg-panel);
+    border:3px solid var(--neon-purple);
+    border-radius:4px;
+    padding:22px;
+    margin:16px 0;
+    box-shadow:0 0 18px rgba(181,55,242,.35), inset 0 0 30px rgba(0,0,0,.5);
+  }
+  .panel.cyan{border-color:var(--neon-cyan);box-shadow:0 0 18px rgba(5,242,242,.3);}
+  .panel.pink{border-color:var(--neon-pink);box-shadow:0 0 18px rgba(255,46,151,.3);}
+  .panel.green{border-color:var(--neon-green);box-shadow:0 0 18px rgba(57,255,20,.3);}
+
+  /* ===== GRID DE CARTAS ===== */
+  .cards{
+    display:grid;
+    grid-template-columns:repeat(auto-fit,minmax(220px,1fr));
+    gap:16px;
+    margin:18px 0;
+  }
+  .card{
+    background:linear-gradient(160deg,#1a0b40,#2a1160);
+    border:2px solid var(--neon-cyan);
+    padding:18px;
+    border-radius:4px;
+    transition:transform .15s, box-shadow .15s;
+    cursor:default;
+  }
+  .card:hover{
+    transform:translateY(-6px) scale(1.02);
+    box-shadow:0 8px 24px rgba(5,242,242,.5);
+    border-color:var(--neon-yellow);
+  }
+  .card .icon{font-size:36px;display:block;margin-bottom:10px;}
+  .card b{color:var(--neon-yellow);font-family:'Press Start 2P';font-size:10px;}
+
+  /* ===== TABLA MENSAJES ===== */
+  table{
+    width:100%;
+    border-collapse:collapse;
+    margin:14px 0;
+    font-size:18px;
+  }
+  th,td{
+    border:2px solid var(--grid);
+    padding:8px 10px;
+    text-align:left;
+  }
+  th{
+    background:var(--neon-purple);
+    color:#fff;
+    font-family:'Press Start 2P';
+    font-size:9px;
+  }
+  tr:nth-child(even) td{background:rgba(42,17,96,.4);}
+  tr:hover td{background:rgba(5,242,242,.15);}
+  .byte{color:var(--neon-green);font-weight:bold;}
+
+  /* ===== BOSS / ATAQUES ===== */
+  .boss{
+    display:flex;
+    gap:16px;
+    align-items:flex-start;
+    background:#1a0018;
+    border:3px solid var(--neon-pink);
+    padding:18px;
+    margin:14px 0;
+    border-radius:4px;
+  }
+  .boss .sprite{font-size:48px;flex-shrink:0;animation:bob 1.5s ease-in-out infinite;}
+  @keyframes bob{0%,100%{transform:translateY(0);}50%{transform:translateY(-8px);}}
+  .hpbar{
+    height:16px;
+    background:#330011;
+    border:2px solid #fff;
+    margin:8px 0;
+    position:relative;
+    overflow:hidden;
+  }
+  .hpbar span{
+    display:block;
+    height:100%;
+    background:linear-gradient(90deg,var(--neon-green),var(--neon-yellow));
+  }
+
+  /* ===== CODE ===== */
+  code, pre{
+    font-family:'VT323',monospace;
+    background:#000;
+    color:var(--neon-green);
+    border:1px solid var(--neon-green);
+    border-radius:3px;
+  }
+  code{padding:2px 6px;font-size:17px;}
+  pre{
+    padding:14px;
+    overflow-x:auto;
+    margin:12px 0;
+    font-size:16px;
+    line-height:1.4;
+    box-shadow:0 0 12px rgba(57,255,20,.2);
+  }
+  pre .kw{color:var(--neon-cyan);}
+  pre .cm{color:#6a6a9a;}
+
+  /* ===== BOTONES INTERACTIVOS ===== */
+  .btn{
+    font-family:'Press Start 2P';
+    font-size:10px;
+    background:var(--neon-pink);
+    color:#fff;
+    border:none;
+    padding:12px 18px;
+    cursor:pointer;
+    border-bottom:4px solid #a01060;
+    border-radius:3px;
+    transition:all .1s;
+    margin:4px;
+  }
+  .btn:hover{background:var(--neon-yellow);color:#000;border-bottom-color:#a08000;}
+  .btn:active{transform:translateY(3px);border-bottom-width:1px;}
+  .btn.cyan{background:var(--neon-cyan);color:#000;border-bottom-color:#028;}
+  .btn.green{background:var(--neon-green);color:#000;border-bottom-color:#080;}
+
+  /* ===== TERMINAL SIMULADA ===== */
+  #terminal{
+    background:#000;
+    border:3px solid var(--neon-green);
+    border-radius:6px;
+    padding:16px;
+    min-height:180px;
+    font-size:17px;
+    color:var(--neon-green);
+    box-shadow:0 0 20px rgba(57,255,20,.4), inset 0 0 40px rgba(0,40,0,.6);
+    white-space:pre-wrap;
+    line-height:1.4;
+  }
+  #terminal .prompt{color:var(--neon-cyan);}
+  .term-cursor{animation:blink 1s steps(2) infinite;}
+
+  /* ===== BARRAS DE MÉTRICAS ===== */
+  .metric-row{margin:16px 0;}
+  .metric-label{display:flex;justify-content:space-between;font-size:16px;margin-bottom:4px;}
+  .bar{
+    height:22px;
+    background:#001818;
+    border:2px solid var(--neon-cyan);
+    position:relative;
+    border-radius:3px;
+    overflow:hidden;
+  }
+  .bar span{
+    display:block;height:100%;
+    background:linear-gradient(90deg,var(--neon-green),var(--neon-yellow),var(--neon-pink));
+    transition:width 1.2s cubic-bezier(.2,.9,.3,1);
+    width:0;
+  }
+  .cota{
+    color:var(--neon-pink);
+    font-family:'Press Start 2P';
+    font-size:9px;
+  }
+
+  /* ===== TABS ===== */
+  .tabs{display:flex;flex-wrap:wrap;gap:4px;margin-bottom:0;}
+  .tab-btn{
+    font-family:'Press Start 2P';font-size:9px;
+    background:var(--bg-panel);color:var(--neon-cyan);
+    border:2px solid var(--neon-cyan);border-bottom:none;
+    padding:10px 12px;cursor:pointer;
+  }
+  .tab-btn.active{background:var(--neon-cyan);color:#000;}
+  .tab-content{display:none;}
+  .tab-content.active{display:block;animation:fadein .3s;}
+  @keyframes fadein{from{opacity:0;}to{opacity:1;}}
+
+  /* ===== FOOTER ===== */
+  footer{
+    text-align:center;
+    padding:40px 20px;
+    border-top:3px solid var(--neon-pink);
+    margin-top:60px;
+  }
+  footer .pixel{font-size:10px;color:var(--neon-yellow);line-height:2;}
+  .heart{color:var(--neon-pink);animation:beat .8s infinite;}
+  @keyframes beat{0%,100%{transform:scale(1);}50%{transform:scale(1.3);}}
+
+  a.link{color:var(--neon-cyan);text-decoration:underline;}
+  a.link:hover{color:var(--neon-yellow);}
+
+  .achievement{
+    display:inline-block;
+    background:#1a1400;
+    border:2px solid var(--neon-yellow);
+    color:var(--neon-yellow);
+    font-size:15px;
+    padding:6px 10px;
+    margin:4px;
+    border-radius:3px;
+  }
+
+  /* score flotante */
+  #scorebox{
+    position:fixed;top:74px;right:10px;z-index:200;
+    font-family:'Press Start 2P';font-size:9px;
+    background:#000;border:2px solid var(--neon-yellow);
+    color:var(--neon-yellow);padding:8px 10px;border-radius:4px;
+    box-shadow:0 0 12px rgba(254,228,64,.5);
+  }
+</style>
+</head>
+<body>
+
+<div id="scorebox">SCORE: <span id="score">0</span></div>
+
+<!-- ============ HERO ============ -->
+<header>
+  <div class="title">PGSQL&nbsp;QUEST</div>
+  <div class="subtitle">TALLER DE REDES Y SERVICIOS &mdash; 2026-1</div>
+  <div class="subtitle" style="color:var(--neon-pink)">TAREAS 2 &amp; 3 // PROTOCOLO POSTGRESQL FRONTEND/BACKEND</div>
+  <div class="players">PLAYER 1: <b>Sebastián Quintero</b> &nbsp;&bull;&nbsp; PLAYER 2: <b>Valentina Martínez</b></div>
+  <div class="press-start blink">&#9654; PRESS START &#9664;</div>
+</header>
+
+<!-- ============ NAV ============ -->
+<nav>
+  <a href="#intro">01 INTRO</a>
+  <a href="#teoria">02 PROTOCOLO</a>
+  <a href="#stack">03 STACK</a>
+  <a href="#trafico">04 TRÁFICO</a>
+  <a href="#bosses">05 ATAQUES</a>
+  <a href="#fuzzing">06 FUZZING</a>
+  <a href="#metricas">07 MÉTRICAS</a>
+  <a href="#terminal-sec">08 CONSOLA</a>
+  <a href="#final">09 GAME OVER</a>
+</nav>
+
+<!-- ============ 01 INTRO ============ -->
+<section id="intro">
+  <span class="level-tag">LEVEL 01 &mdash; START</span>
+  <h2>&#128377; La Misión</h2>
+  <div class="panel cyan">
+    <p class="lead">Dos aventureros se adentran en las profundidades del protocolo
+    <b style="color:var(--neon-yellow)">PostgreSQL Frontend/Backend (v3.0)</b>, que corre
+    sobre <b>TCP puerto 5432</b>. El objetivo: <b>entender</b> cómo hablan cliente y
+    servidor, <b>capturar</b> su tráfico, y luego <b>hackearlo</b> en vivo.</p>
+    <p>Todo el escenario se monta con <b>Docker</b> (servidor y cliente compilados desde el
+    código fuente en C) y se ataca con <b>Scapy</b>. El informe crece por capítulos:</p>
+  </div>
+  <div class="cards">
+    <div class="card"><span class="icon">&#128218;</span><b>CAP. I</b><p>Marco teórico, historia e instalación del protocolo.</p></div>
+    <div class="card"><span class="icon">&#128269;</span><b>CAP. II</b><p>Análisis del tráfico capturado con Wireshark.</p></div>
+    <div class="card"><span class="icon">&#9876;</span><b>CAP. III</b><p>Modificación, inyección y análisis de métricas.</p></div>
+  </div>
+</section>
+
+<!-- ============ 02 TEORIA ============ -->
+<section id="teoria">
+  <span class="level-tag">LEVEL 02 &mdash; LORE</span>
+  <h2>&#128220; El Protocolo (Teoría)</h2>
+  <div class="panel">
+    <p>PostgreSQL usa un protocolo de <b>capa de aplicación orientado a mensajes</b>. Nació del
+    proyecto POSTGRES de Berkeley (1986); la <b>versión 3.0</b> (2003, PostgreSQL 7.4) fijó la
+    estructura de mensajes que sigue vigente. Cada mensaje (salvo los primeros) tiene 3 campos:</p>
+    <div class="cards">
+      <div class="card"><span class="icon">&#127991;</span><b>TIPO (1 byte)</b><p>Un carácter ASCII que identifica el mensaje.</p></div>
+      <div class="card"><span class="icon">&#128207;</span><b>LONGITUD (4 bytes)</b><p>Entero Big-Endian con el tamaño total.</p></div>
+      <div class="card"><span class="icon">&#128230;</span><b>PAYLOAD</b><p>El contenido: SQL, filas, credenciales...</p></div>
+    </div>
+    <h3>&#127918; Máquina de estados: las 4 fases de una partida</h3>
+    <p>1) <b>Conexión</b> (SSLRequest &rarr; el server responde <span class="byte">N</span>, sin TLS)
+    &bull; 2) <b>Autenticación</b> <b>SCRAM-SHA-256</b> (la contraseña NUNCA viaja)
+    &bull; 3) <b>Preparación</b> (ParameterStatus, ReadyForQuery)
+    &bull; 4) <b>Consultas</b> (Query &rarr; RowDescription, DataRow, CommandComplete).</p>
+  </div>
+
+  <h3>&#128196; Bestiario de mensajes (clic en una fila = +10 pts)</h3>
+  <div class="panel green">
+  <table id="msgtable">
+    <tr><th>MENSAJE</th><th>BYTE</th><th>EMISOR</th><th>QUÉ HACE</th></tr>
+    <tr><td>SSLRequest</td><td class="byte">—</td><td>Cliente</td><td>¿Aceptas TLS?</td></tr>
+    <tr><td>StartupMessage</td><td class="byte">—</td><td>Cliente</td><td>Abre sesión: usuario + BD</td></tr>
+    <tr><td>AuthenticationSASL</td><td class="byte">R</td><td>Servidor</td><td>Propone SCRAM-SHA-256</td></tr>
+    <tr><td>SASLResponse</td><td class="byte">p</td><td>Cliente</td><td>ClientProof (prueba criptográfica)</td></tr>
+    <tr><td>ReadyForQuery</td><td class="byte">Z</td><td>Servidor</td><td>Listo para recibir órdenes</td></tr>
+    <tr><td>Query</td><td class="byte">Q</td><td>Cliente</td><td>Texto SQL</td></tr>
+    <tr><td>RowDescription</td><td class="byte">T</td><td>Servidor</td><td>Describe columnas</td></tr>
+    <tr><td>DataRow</td><td class="byte">D</td><td>Servidor</td><td>Una fila de resultado</td></tr>
+    <tr><td>CommandComplete</td><td class="byte">C</td><td>Servidor</td><td>Resumen de la orden</td></tr>
+    <tr><td>Terminate</td><td class="byte">X</td><td>Cliente</td><td>Cierra la sesión</td></tr>
+  </table>
+  </div>
+</section>
+
+<!-- ============ 03 STACK ============ -->
+<section id="stack">
+  <span class="level-tag">LEVEL 03 &mdash; INVENTORY</span>
+  <h2>&#127918; El Stack (Práctica T2)</h2>
+  <div class="panel pink">
+    <p>El entorno se despliega con <b>docker-compose</b> en una red bridge <code>red_taller</code>.
+    Para la Tarea 3 se sumaron <b>2 contenedores atacantes</b> con Scapy:</p>
+  </div>
+  <div class="cards">
+    <div class="card"><span class="icon">&#128421;</span><b>psql_server</b><p>PostgreSQL compilado en C. IP 172.18.0.2 : 5432</p></div>
+    <div class="card"><span class="icon">&#128187;</span><b>psql_client</b><p>Cliente <code>psql</code> interactivo. IP 172.18.0.3</p></div>
+    <div class="card"><span class="icon">&#128248;</span><b>psql_capture</b><p><code>tcpdump</code> &rarr; captura_postgres.pcap</p></div>
+    <div class="card"><span class="icon">&#128520;</span><b>scapy_mitm</b><p>MITM en vivo (NFQUEUE+Scapy) + <code>tc netem</code></p></div>
+    <div class="card"><span class="icon">&#128163;</span><b>scapy_attacker</b><p>Inyección / fuzzing con Scapy</p></div>
+  </div>
+  <div class="panel">
+    <h3>&#9881; Arsenal tecnológico</h3>
+    <span class="achievement">&#128230; Docker + Compose</span>
+    <span class="achievement">&#128024; PostgreSQL (C)</span>
+    <span class="achievement">&#129433; Scapy</span>
+    <span class="achievement">&#128225; NetfilterQueue</span>
+    <span class="achievement">&#128295; iptables</span>
+    <span class="achievement">&#9201; tc / netem</span>
+    <span class="achievement">&#128200; Python + matplotlib</span>
+    <span class="achievement">&#129388; Wireshark</span>
+  </div>
+</section>
+
+<!-- ============ 04 TRAFICO ============ -->
+<section id="trafico">
+  <span class="level-tag">LEVEL 04 &mdash; SCAN</span>
+  <h2>&#128269; Tráfico Observado (T2)</h2>
+  <div class="panel cyan">
+    <p>Con el filtro <code>pgsql</code> en Wireshark se confirmó la máquina de estados exacta.
+    Hallazgo clave para la seguridad:</p>
+    <p class="lead" style="color:var(--neon-pink)">&#9888; Sin TLS, TODO el SQL y los datos viajan
+    en <b>texto plano</b>. La única excepción es la contraseña, protegida por SCRAM.</p>
+    <h3>Secuencia de una consulta SELECT</h3>
+    <pre><span class="cm"># Cliente -&gt; Servidor</span>
+Q  Query           SELECT * FROM tareas;
+<span class="cm"># Servidor -&gt; Cliente</span>
+T  RowDescription  (id, nombre_ramo)
+D  DataRow         [1, "Taller de Redes"]
+C  CommandComplete SELECT 1
+Z  ReadyForQuery   listo &#9989;</pre>
+  </div>
+</section>
+
+<!-- ============ 05 BOSSES ============ -->
+<section id="bosses">
+  <span class="level-tag">LEVEL 05 &mdash; BOSS FIGHT</span>
+  <h2>&#9876; Las 3 Modificaciones (MITM en vivo)</h2>
+  <div class="panel">
+    <p>Con <b>NetfilterQueue + Scapy</b>, el contenedor <code>scapy_mitm</code> desvía el tráfico del
+    puerto 5432 a una cola, lo reescribe y lo reinyecta. <b>Regla de oro:</b> las sustituciones son de
+    <b>igual longitud</b> para no romper la conexión TCP.</p>
+  </div>
+
+  <div class="boss">
+    <div class="sprite">&#128127;</div>
+    <div style="flex:1">
+      <h3 style="margin-top:0">BOSS 1 &mdash; "El Terminador" (Q &rarr; X)</h3>
+      <p>Cambia el byte de tipo <span class="byte">Q</span> (Query) por <span class="byte">X</span>
+      (Terminate). El servidor cree que le piden cerrar y mata la sesión.</p>
+      <div class="hpbar"><span style="width:15%"></span></div>
+      <p><b style="color:var(--neon-pink)">EFECTO:</b> Denegación de servicio. <code>psql</code>:
+      "server closed the connection unexpectedly". <b>Valida el Caso A.</b></p>
+    </div>
+  </div>
+
+  <div class="boss">
+    <div class="sprite">&#129302;</div>
+    <div style="flex:1">
+      <h3 style="margin-top:0">BOSS 2 &mdash; "El Impostor" (tareas &rarr; xareas)</h3>
+      <p>Reescribe el texto SQL en tránsito. Tú escribes <code>tareas</code>, el server recibe
+      <code>xareas</code>.</p>
+      <div class="hpbar"><span style="width:45%"></span></div>
+      <p><b style="color:var(--neon-pink)">EFECTO:</b> El servidor ejecuta OTRA consulta:
+      <code>relation "xareas" does not exist</code>.</p>
+    </div>
+  </div>
+
+  <div class="boss">
+    <div class="sprite">&#128123;</div>
+    <div style="flex:1">
+      <h3 style="margin-top:0">BOSS 3 &mdash; "El Falsificador" (DataRow adulterado)</h3>
+      <p>Modifica la respuesta del server: <code>Taller de Redes</code> &rarr; <code>HACKED de Redes</code>.</p>
+      <div class="hpbar"><span style="width:70%"></span></div>
+      <p><b style="color:var(--neon-pink)">EFECTO:</b> <code>psql</code> muestra un dato que nunca existió
+      en la BD. Ni cliente ni servidor lo detectan. <b>Valida el Caso B.</b></p>
+    </div>
+  </div>
+</section>
+
+<!-- ============ 06 FUZZING ============ -->
+<section id="fuzzing">
+  <span class="level-tag">LEVEL 06 &mdash; CHAOS</span>
+  <h2>&#127922; Las 2 Inyecciones (Fuzzing)</h2>
+  <div class="panel green">
+    <p>Desde <code>scapy_attacker</code> se hace el handshake TCP a mano y se inyectan
+    <b>StartupMessages malformados</b>. Sorpresa: aquí el objetivo NO es tumbar al server, sino comprobar
+    que su parser <b>valida bien</b> y rechaza la basura.</p>
+  </div>
+  <div class="cards">
+    <div class="card" style="border-color:var(--neon-yellow)">
+      <span class="icon">&#128208;</span><b>INJECT 1: FRAMING</b>
+      <p>Aleatoriza el prefijo de <b>longitud</b> (0, 0xFFFFFFFF, millones...).</p>
+      <p style="color:var(--neon-green)">&#9989; El server rechaza: "invalid length of startup packet".</p>
+    </div>
+    <div class="card" style="border-color:var(--neon-yellow)">
+      <span class="icon">&#127183;</span><b>INJECT 2: CONTENIDO</b>
+      <p>Versión de protocolo y parámetros con bytes aleatorios.</p>
+      <p style="color:var(--neon-green)">&#9989; El server responde ErrorResponse: "unsupported frontend protocol".</p>
+    </div>
+  </div>
+</section>
+
+<!-- ============ 07 METRICAS ============ -->
+<section id="metricas">
+  <span class="level-tag">LEVEL 07 &mdash; STATS</span>
+  <h2>&#128202; Métricas &amp; Cotas de Desempeño</h2>
+  <div class="panel cyan">
+    <p>Con <code>tc netem</code> se degradó la red y se midió el <b>throughput</b> (transfiriendo una
+    tabla de ~7 MB con <code>COPY</code>). Se eligieron 2 métricas que miden aspectos distintos:
+    <b>latencia</b> (tiempo) y <b>pérdida de paquetes</b> (fiabilidad).</p>
+    <p>La <b>cota de desempeño</b> = el valor donde el throughput cae bajo el 10% del máximo.</p>
+    <p style="text-align:center"><button class="btn cyan" onclick="runBars()">&#9654; MEDIR THROUGHPUT</button></p>
+
+    <h3>&#9201; MÉTRICA 1 &mdash; Latencia (cota &asymp; 200 ms)</h3>
+    <div id="delaybars"></div>
+
+    <h3 style="margin-top:24px">&#128165; MÉTRICA 2 &mdash; Pérdida de paquetes (cota &asymp; 10%)</h3>
+    <div id="lossbars"></div>
+  </div>
+</section>
+
+<!-- ============ 08 TERMINAL ============ -->
+<section id="terminal-sec">
+  <span class="level-tag">LEVEL 08 &mdash; HACK CONSOLE</span>
+  <h2>&#128421; Consola Interactiva</h2>
+  <div class="panel green">
+    <p>Simula los comandos reales de la demo. Pulsa un botón y mira la "salida":</p>
+    <p>
+      <button class="btn green" onclick="term('sniff')">sniff</button>
+      <button class="btn green" onclick="term('fuzz')">fuzz</button>
+      <button class="btn green" onclick="term('mitm_tipo')">mitm Q&rarr;X</button>
+      <button class="btn green" onclick="term('mitm_data')">mitm DataRow</button>
+      <button class="btn green" onclick="term('netem')">netem 200ms</button>
+      <button class="btn" onclick="term('clear')">clear</button>
+    </p>
+    <div id="terminal"><span class="prompt">joseq@taller-redes:~$</span> <span class="term-cursor">&#9608;</span></div>
+  </div>
+</section>
+
+<!-- ============ 09 FINAL ============ -->
+<section id="final">
+  <span class="level-tag">LEVEL 09 &mdash; GAME CLEAR</span>
+  <h2>&#127942; Conclusión</h2>
+  <div class="panel pink">
+    <p class="lead">La autenticación de PostgreSQL (SCRAM-SHA-256) es <b>robusta</b>: la contraseña nunca
+    viaja. PERO sin <b>TLS</b>, todo lo demás es manipulable por un atacante en la ruta:</p>
+    <p>&#9989; Se logró <b>denegar el servicio</b>, <b>ejecutar consultas falsas</b> y <b>falsificar datos</b>
+    ante el cliente. El fuzzing confirmó que el parser de inicio del server <b>sí valida</b> las entradas.
+    Las métricas fijaron cotas concretas: <b>~200 ms</b> de latencia y <b>~10%</b> de pérdida.</p>
+    <p class="lead" style="color:var(--neon-yellow)">&#9888; Moraleja: en producción, <b>TLS no es opcional.</b></p>
+  </div>
+  <div class="panel" style="text-align:center">
+    <h3>&#128191; ENLACES DE LA PARTIDA</h3>
+    <p>&#127916; <a class="link" href="https://drive.google.com/file/d/1E7D9Mztg_WDtbUt6iYXz46ZSLjgJODKr/view?usp=sharing" target="_blank">Video Tarea 2</a>
+    &nbsp;&bull;&nbsp; &#127916; <a class="link" href="https://drive.google.com/file/d/1w-StOqau1wTsYGMon5ouDZdJEcnylIcm/view?usp=sharing" target="_blank">Video Tarea 3</a></p>
+    <p>&#128193; <a class="link" href="https://github.com/valemiauz/Taller-redes-tarea02" target="_blank">Repositorio del proyecto</a></p>
+  </div>
+</section>
+
+<footer>
+  <div class="pixel">
+    &#9733; PGSQL QUEST &#9733;<br>
+    TALLER DE REDES Y SERVICIOS &bull; 2026-1<br>
+    HECHO CON <span class="heart">&#10084;</span> Y MUCHO CAFÉ<br>
+    <span style="color:var(--neon-cyan)">INSERT COIN TO CONTINUE...</span>
+  </div>
+</footer>
+
+<script>
+  /* ===== SCORE ===== */
+  let score = 0;
+  const scoreEl = document.getElementById('score');
+  function addScore(n){
+    score += n;
+    scoreEl.textContent = score;
+    scoreEl.parentElement.style.transform='scale(1.2)';
+    setTimeout(()=>scoreEl.parentElement.style.transform='scale(1)',150);
+  }
+
+  /* filas de la tabla suman puntos */
+  document.querySelectorAll('#msgtable tr').forEach((tr,i)=>{
+    if(i===0) return;
+    tr.style.cursor='pointer';
+    tr.addEventListener('click',()=>{
+      if(!tr.dataset.done){tr.dataset.done=1;addScore(10);
+        tr.style.boxShadow='0 0 14px var(--neon-green)';}
+    });
+  });
+
+  /* cartas suman puntos al hover-clic */
+  document.querySelectorAll('.card').forEach(c=>{
+    c.addEventListener('click',()=>{
+      if(!c.dataset.done){c.dataset.done=1;addScore(5);}
+    });
+  });
+
+  /* ===== BARRAS DE MÉTRICAS ===== */
+  const delayData = [
+    {x:'0ms',v:247},{x:'50ms',v:60},{x:'100ms',v:34},
+    {x:'200ms',v:19,cota:true},{x:'400ms',v:9.9},{x:'800ms',v:4.7}
+  ];
+  const lossData = [
+    {x:'0%',v:257},{x:'1%',v:296},{x:'5%',v:101},
+    {x:'10%',v:16,cota:true},{x:'20%',v:0.9},{x:'40%',v:0.1}
+  ];
+  const MAX = 300;
+
+  function buildBars(id,data){
+    const box = document.getElementById(id);
+    box.innerHTML='';
+    data.forEach(d=>{
+      const row=document.createElement('div');row.className='metric-row';
+      row.innerHTML=`<div class="metric-label">
+          <span>${d.x} ${d.cota?'<span class="cota">&#9668; COTA</span>':''}</span>
+          <span style="color:var(--neon-green)">${d.v} Mbps</span></div>
+          <div class="bar"><span data-w="${(d.v/MAX*100).toFixed(1)}"></span></div>`;
+      box.appendChild(row);
+    });
+  }
+  buildBars('delaybars',delayData);
+  buildBars('lossbars',lossData);
+
+  let barsRan=false;
+  function runBars(){
+    document.querySelectorAll('.bar span').forEach(s=>{
+      s.style.width = s.dataset.w + '%';
+    });
+    if(!barsRan){barsRan=true;addScore(25);}
+  }
+
+  /* dispara barras al hacer scroll a la sección */
+  const obs = new IntersectionObserver((ents)=>{
+    ents.forEach(e=>{if(e.isIntersecting){runBars();}});
+  },{threshold:.3});
+  obs.observe(document.getElementById('metricas'));
+
+  /* ===== TERMINAL SIMULADA ===== */
+  const termEl = document.getElementById('terminal');
+  const outputs = {
+    sniff:`<span class="prompt">$</span> docker exec -it scapy_mitm python3 sniff_postgres.py
+[C -&gt; S] tipo='Q'  Query            SELECT * FROM tareas;
+[S -&gt; C] tipo='T'  RowDescription   (id, nombre_ramo)
+[S -&gt; C] tipo='D'  DataRow          [1, "Taller de Redes"]
+[S -&gt; C] tipo='C'  CommandComplete  SELECT 1
+[S -&gt; C] tipo='Z'  ReadyForQuery    &#9989;`,
+    fuzz:`<span class="prompt">$</span> docker exec -it scapy_attacker python3 fuzz_postgres.py
+[framing]   inject 512b (len=ffffffff) -&gt; server cerró la conexión
+[framing]   inject 22b  (len=00000000) -&gt; invalid length of startup packet
+[contenido] inject 48b  random ver     -&gt; ErrorResponse: unsupported frontend protocol
+&gt;&gt; El parser VALIDÓ y rechazó la basura &#9989;`,
+    mitm_tipo:`<span class="prompt">$</span> MITM_MODE=tipo ... mitm_postgres.py
+[tipo] Query: byte de tipo 'Q' -&gt; 'X'
+&gt;&gt; psql: server closed the connection unexpectedly
+&gt;&gt; &#9760; DENEGACIÓN DE SERVICIO (Caso A)`,
+    mitm_data:`<span class="prompt">$</span> MITM_MODE=datarow OLD="Taller de Redes" NEW="HACKED de Redes"
+[datarow] 'Taller de Redes' -&gt; 'HACKED de Redes'
+ id |   nombre_ramo
+----+------------------
+  1 | HACKED de Redes
+&gt;&gt; &#128123; DATO FALSIFICADO (Caso B)`,
+    netem:`<span class="prompt">$</span> docker exec scapy_mitm tc qdisc add dev eth0 root netem delay 200ms
+&gt;&gt; throughput base: 247 Mbps
+&gt;&gt; con 200ms:        19 Mbps  &#9660;
+&gt;&gt; &#9888; COTA DE DESEMPEÑO alcanzada`
+  };
+  const base = '<span class="prompt">joseq@taller-redes:~$</span> <span class="term-cursor">&#9608;</span>';
+  function term(cmd){
+    if(cmd==='clear'){termEl.innerHTML=base;return;}
+    addScore(15);
+    termEl.innerHTML='';
+    const txt = outputs[cmd];
+    let i=0;
+    /* efecto máquina de escribir (rápido) */
+    const raw = txt;
+    function type(){
+      termEl.innerHTML = raw.slice(0,i) + '<span class="term-cursor">&#9608;</span>';
+      i+=6;
+      if(i<raw.length){setTimeout(type,8);}
+      else{termEl.innerHTML = raw + '\n' + base;}
+    }
+    type();
+  }
+
+  /* ===== KONAMI CODE easter egg ===== */
+  const konami=[38,38,40,40,37,39,37,39,66,65];let ki=0;
+  document.addEventListener('keydown',e=>{
+    if(e.keyCode===konami[ki]){ki++;if(ki===konami.length){
+      addScore(1000);
+      document.body.style.animation='none';
+      alert('&#127942; KONAMI CODE! +1000 pts\nSCRAM-SHA-256 UNLOCKED. TLS is the true final boss.');
+      ki=0;
+    }}else{ki=0;}
+  });
+
+  /* smooth nav score */
+  document.querySelectorAll('nav a').forEach(a=>{
+    a.addEventListener('click',()=>addScore(2));
+  });
+</script>
+</body>
+</html>
