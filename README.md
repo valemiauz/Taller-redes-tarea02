@@ -3,6 +3,7 @@
 > Resolución completa de las Tareas 02 y 03 para el Taller de Redes y Servicios (Semestre 2026-1) By Sebastian Quintero y Valentina Martinez ; Protocolo = PostgreSQL Frontend/Backend.
 > 🎥 Demostración Tarea 02: [Ver en Google Drive](https://drive.google.com/file/d/1E7D9Mztg_WDtbUt6iYXz46ZSLjgJODKr/view?usp=sharing)
 > 🎥 Demostración Tarea 03: _([Ver en Google Drive](https://drive.google.com/file/d/1w-StOqau1wTsYGMon5ouDZdJEcnylIcm/view?usp=sharing))_
+> 🕹️ Página web resumen (GitHub Pages): [Ver despliegue](https://github.com/valemiauz/Taller-redes-tarea02/deployments/github-pages)
 
 ---
 
