@@ -2,7 +2,7 @@
 
 > Resolución completa de las Tareas 02 y 03 para el Taller de Redes y Servicios (Semestre 2026-1) By Sebastian Quintero y Valentina Martinez ; Protocolo = PostgreSQL Frontend/Backend.
 > 🎥 Demostración Tarea 02: [Ver en Google Drive](https://drive.google.com/file/d/1E7D9Mztg_WDtbUt6iYXz46ZSLjgJODKr/view?usp=sharing)
-> 🎥 Demostración Tarea 03: _(https://drive.google.com/file/d/1w-StOqau1wTsYGMon5ouDZdJEcnylIcm/view?usp=sharing)_
+> 🎥 Demostración Tarea 03: _(pega aquí el enlace del nuevo video de 6 a 8 minutos)_
 
 ---
 
@@ -328,7 +328,7 @@ Resultados obtenidos en este equipo (corrida de referencia; la **cota de desempe
 
 → **Cota de desempeño ≈ 10 %** de pérdida; con ≥ 40 % la transferencia ya no completa (la conexión expira).
 
-Para aplicar/quitar las métricas manualmente (útil para el video):
+Para aplicar/quitar las métricas manualmente :
 
 ```bash
 docker exec scapy_mitm tc qdisc add dev eth0 root netem delay 200ms   # añade latencia
